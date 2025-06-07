@@ -98,6 +98,7 @@ class BatteryVC: UIViewController {
     
     func batteryTest() {
         
+        //if ((Luminous.Battery.level ?? 0.0) < 80.0) {
         if Luminous.Battery.state == .unknown {
             
             if (AppUserDefaults.value(forKey: "AppResultJSON_Data") != nil) {

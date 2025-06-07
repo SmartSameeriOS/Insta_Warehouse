@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -107,6 +107,7 @@
 		596AA41D2D6361CE001E72A0 /* MicrophonePermission in Frameworks */ = {isa = PBXBuildFile; productRef = 596AA41C2D6361CE001E72A0 /* MicrophonePermission */; };
 		596AA41F2D6361CE001E72A0 /* PhotoLibraryPermission in Frameworks */ = {isa = PBXBuildFile; productRef = 596AA41E2D6361CE001E72A0 /* PhotoLibraryPermission */; };
 		596AA4212D6361CE001E72A0 /* SpeechRecognizerPermission in Frameworks */ = {isa = PBXBuildFile; productRef = 596AA4202D6361CE001E72A0 /* SpeechRecognizerPermission */; };
+		59AE44D22DEF077500D753A7 /* QRCodeReader in Frameworks */ = {isa = PBXBuildFile; productRef = 59AE44D12DEF077500D753A7 /* QRCodeReader */; };
 		59D4BD932D11823F00E009B0 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 59D4BD922D11823F00E009B0 /* UIKit.framework */; };
 		59DE7CF22CFF28BA00DFC04C /* ios-data-wipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59DE7CF12CFF28BA00DFC04C /* ios-data-wipe.swift */; };
 		59E7F6852D6491BC0040ECC4 /* CameraTestVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59E7F6842D6491BC0040ECC4 /* CameraTestVC.swift */; };
@@ -232,6 +233,10 @@
 		59E7F6842D6491BC0040ECC4 /* CameraTestVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraTestVC.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		59FF7D322D9D5A6E008CC318 /* PhysicalQuestionModal */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PhysicalQuestionModal; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		183ACB722C563E7E004C9884 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -252,6 +257,7 @@
 				596AA4022D6359AF001E72A0 /* BluetoothPermission in Frameworks */,
 				596AA4132D6361CE001E72A0 /* BluetoothPermission in Frameworks */,
 				596AA40E2D6359AF001E72A0 /* PhotoLibraryPermission in Frameworks */,
+				59AE44D22DEF077500D753A7 /* QRCodeReader in Frameworks */,
 				596AA4042D6359AF001E72A0 /* CameraPermission in Frameworks */,
 				596AA40A2D6359AF001E72A0 /* MediaLibraryPermission in Frameworks */,
 				59D4BD932D11823F00E009B0 /* UIKit.framework in Frameworks */,
@@ -466,6 +472,7 @@
 		188384EB2C57755D003CF5E1 /* QuestionModel */ = {
 			isa = PBXGroup;
 			children = (
+				59FF7D322D9D5A6E008CC318 /* PhysicalQuestionModal */,
 				188384ED2C577581003CF5E1 /* ConditionValue.swift */,
 				188384EC2C577581003CF5E1 /* CosmeticQuestions.swift */,
 				188384F02C577581003CF5E1 /* Msg.swift */,
@@ -524,6 +531,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				59FF7D322D9D5A6E008CC318 /* PhysicalQuestionModal */,
 			);
 			name = InstaCashSDK;
 			productName = InstaCashSDK;
@@ -601,6 +611,7 @@
 			mainGroup = 183ACB6C2C563E7E004C9884;
 			packageReferences = (
 				596AA4112D6361CE001E72A0 /* XCRemoteSwiftPackageReference "PermissionsKit" */,
+				59AE44D02DEF077500D753A7 /* XCRemoteSwiftPackageReference "QRCodeReader.swift" */,
 			);
 			productRefGroup = 183ACB762C563E7E004C9884 /* Products */;
 			projectDirPath = "";
@@ -975,6 +986,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone permission required to check the Mic and Speaker";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Photo library access required to upload device's bill & front/back image";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access required to upload device's bill & front/back image";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This permission is required to check the microphone";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -987,7 +999,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.4;
+				MARKETING_VERSION = 0.0.5;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -1084,6 +1096,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone permission required to check the Mic and Speaker";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Photo library access required to upload device's bill & front/back image";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo library access required to upload device's bill & front/back image";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This permission is required to check the microphone";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -1096,7 +1109,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.4;
+				MARKETING_VERSION = 0.0.5;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -1293,6 +1306,14 @@
 				minimumVersion = 11.1.0;
 			};
 		};
+		59AE44D02DEF077500D753A7 /* XCRemoteSwiftPackageReference "QRCodeReader.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/yannickl/QRCodeReader.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.1.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1375,6 +1396,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 596AA4112D6361CE001E72A0 /* XCRemoteSwiftPackageReference "PermissionsKit" */;
 			productName = SpeechRecognizerPermission;
+		};
+		59AE44D12DEF077500D753A7 /* QRCodeReader */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 59AE44D02DEF077500D753A7 /* XCRemoteSwiftPackageReference "QRCodeReader.swift" */;
+			productName = QRCodeReader;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

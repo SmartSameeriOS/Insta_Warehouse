@@ -15,6 +15,8 @@ class PhysicalQuestionVC: UIViewController, UITableViewDelegate, UITableViewData
     @IBOutlet weak var questionProgressVW: UIProgressView!
     @IBOutlet weak var lblQuestionCount: UILabel!
     
+    var arrQuestions = [[String:Any]]()
+    
     //var arrQuestion = ["does your device ON", "does your device OFF", "does your device Broken"]
     //var arrAnswer = ["Yes", "No", "May be", "No Idea"]
     //var responseObject = [String:Any]()
@@ -189,10 +191,11 @@ class PhysicalQuestionVC: UIViewController, UITableViewDelegate, UITableViewData
 """
         
         
-        let respDict = convertToDictionary(text: response)
-        print("respDict", respDict ?? [:])
+        //let respDict = convertToDictionary(text: response)
+        //print("respDict", respDict ?? [:])
+        //let arrData = respDict?["question"] as? NSArray ?? []
         
-        let arrData = respDict?["question"] as? NSArray ?? []
+        let arrData = self.arrQuestions
         
         for index in 0..<arrData.count {
             let dict = arrData[index] as? [String:Any] ?? [:]
@@ -569,16 +572,30 @@ class PhysicalQuestionVC: UIViewController, UITableViewDelegate, UITableViewData
     
     // MARK: IBActions
     @IBAction func physicalQuestionsResultSubmitButtonPressed(_ sender: UIButton) {
+        
         var selJsonDict = [String:Any]()
         
         for item in self.arrQuestionForQuestion {
-            selJsonDict[item.strQuestionName] = item.strAnswerName
+            
+            if item.strAnswerName == "" {
+                
+                DispatchQueue.main.async {
+                    self.view.makeToast(self.getLocalizatioStringValue(key: "Please attend all Questions"), duration: 2.0, position: .top)
+                }
+                
+                return
+                
+            }else {
+                selJsonDict[item.strQuestionName] = item.strAnswerName
+            }
+            
         }
         
         if let dict = questAnswerDict {
             dict(selJsonDict)
             self.navigationController?.popViewController(animated: true)
         }
+        
     }
     
 }

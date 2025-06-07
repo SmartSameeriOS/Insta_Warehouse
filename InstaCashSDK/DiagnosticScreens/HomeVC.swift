@@ -42,7 +42,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
     @IBOutlet weak var startTestBtn: UIButton!
     @IBOutlet weak var quiteAppBtn: UIButton!
     @IBOutlet weak var fetchQuestionBtn: UIButton!
-    
+        
     var questAnswerJSON = JSON()
     var phyMemoryJSON = JSON()
     var oemJailMdmJSON = JSON()
@@ -55,6 +55,9 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
     let reachability: Reachability? = Reachability()
     let hud = JGProgressHUD()
     var isLanguageMatchAtLaunch = false
+    
+    var arrTestsFromServer = [String]()
+    var arrQuestionsFromServer = [[String:Any]]()
     
     //MARK: 1. Bluetooth
     var bluetoothTimer: Timer?
@@ -95,7 +98,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
     var syncTimer: Timer?
     var syncCount = 0
     
-    //MARK: 7. Speaker & Microphone
+    //MARK: 8. Speaker & Microphone
     var Recordings: Recording!
     var recordDuration = 0
     var isBitRate = false
@@ -170,6 +173,8 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
     
     override func viewDidLoad() {
         super.viewDidLoad()
+                
+        getTestProfile()
         
         phyMemoryJSON = JSON()
         oemJailMdmJSON = JSON()
@@ -178,7 +183,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
         
         self.testCollectionView.register(UINib(nibName: "TestCVCell", bundle: nil), forCellWithReuseIdentifier: "TestCVCell")
         
-        self.dynamicTestCallingSetup()
+        //self.dynamicTestCallingSetup()
         
         self.refreshLocalData()
                 
@@ -187,7 +192,10 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
             self.askForAllPermissions()
         }
         
-               
+        
+        // Usage Example:
+        //saveTextFile(fileName: "thanos.txt", content: "Hello, iPhone! This is a test file.")
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -423,6 +431,9 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
         
         if arrTestsInSDK.count == 0 {
             
+            //["WiFi", "battery", "storage", "gsm network", "vibrator_auto", "bluetooth", "gps", "backCamera_manual", "frontCamera_manual", "fingerprint_manual", "earphone jack", "nfc", "auto rotation", "proximity", "dead pixels", "screen", "microusb slot", "torch", "top speaker", "bottom speaker", "top microphone", "bottom microphone", "volume up", "volume down", "power button", "ringer"]
+            
+            /*
             arrTestsInSDK = [
                 
                 "Bluetooth",
@@ -445,27 +456,27 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                 "Auto Rotation",
                 "Proximity",
                 "Finger Print",
-                "Dead Pixel",
-                "Touch Screen",
+                "Dead Pixels",
+                "Screen",
                 "Earphone Jack",
-                "USB Slot",
+                "microusb slot",
                 "Torch",
                 "volume up",
                 "volume down",
                 "power button",
                 "ringer",
                                 
-                "TopSpeakers_auto",
-                "BottomSpeakers_auto",
+                "top speaker_auto",
+                "bottom speaker_auto",
                 
-                //"TopSpeakers_manual",
-                //"BottomSpeakers_manual",
+                //"top speaker",
+                //"bottom speaker",
                 
-                "TopMicrophone_auto",
-                "BottomMicrophone_auto",
+                "top microphone_auto",
+                "bottom microphone_auto",
                 
-                //"TopMicrophone_manual",
-                //"BottomMicrophone_manual",
+                //"top microphone",
+                //"bottom microphone",
                 
                 
                 //"Top Speakers",
@@ -477,8 +488,14 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                 //"Camera",
                 //"nfc",
                 
-                
             ]
+            */
+                    
+            arrTestsInSDK = self.arrTestsFromServer
+            
+//            arrTestsInSDK = [
+//                "bluetooth"
+//            ]
             
         }
         
@@ -521,10 +538,12 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                                         if (key != "LanguageUrl") {
                                                                                         
                                             if (key != "allPermissions") {
-                                                
-                                                //print("key to remove from userDefaults",key)
-                                                defaults.removeObject(forKey: key)
-                                                
+                                                if key != "userId" {
+                                                    
+                                                    //print("key to remove from userDefaults",key)
+                                                    defaults.removeObject(forKey: key)
+                                                    
+                                                }
                                             }
                                             
                                         }
@@ -654,8 +673,108 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
         }
     }
     
+    func readTextFile() {
+        let fileManager = FileManager.default
+        let filePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("myfile.txt")
+        
+        if fileManager.fileExists(atPath: filePath.path) {
+            do {
+                let content = try String(contentsOf: filePath, encoding: .utf8)
+                print("File Content: \(content)")
+            } catch {
+                print("Error reading file: \(error)")
+            }
+        } else {
+            print("File does not exist at: \(filePath.path)")
+        }
+    }
+    
+    /*
+    func readTextFile() {
+        let fileName = "myfile.txt"  // Change this to your actual filename
+        
+        // Get the path to the file inside the app's Documents directory
+        if let filePath = getDocumentsDirectory()?.appendingPathComponent(fileName) {
+            do {
+                let text = try String(contentsOf: filePath, encoding: .utf8)
+                print("File Content: \(text)")
+            } catch {
+                print("Error reading file: \(error.localizedDescription)")
+            }
+        }
+    }
+    */
+    
+    func getDocumentsDirectory() -> URL? {
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+    }
+    
+    func saveTextFile(fileName: String, content: String) {
+        let fileManager = FileManager.default
+
+        // Step 1: Get the Documents Directory Path
+        if let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+            // Step 2: Create Full File Path
+            let fileURL = documentsDirectory.appendingPathComponent(fileName)
+
+            // Step 3: Convert Text to Data & Write to File
+            do {
+                try content.write(to: fileURL, atomically: true, encoding: .utf8)
+                print("✅ File saved at: \(fileURL.path)")
+            } catch {
+                print("❌ Error saving file: \(error)")
+            }
+        }
+    }
+    
+    func listDocumentsFolderFiles() {
+        let fileManager = FileManager.default
+
+        // Get the Documents directory path
+        if let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            do {
+                let fileList = try fileManager.contentsOfDirectory(atPath: documentsPath.path)
+                print("Files in Documents Directory: \(fileList)")
+            } catch {
+                print("Error retrieving file list: \(error)")
+            }
+        }
+    }
+
+    func saveJSONToTempFile(dictionary: [String: Any]) -> URL? {
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("output.json")
+
+        if let jsonData = try? JSONSerialization.data(withJSONObject: dictionary, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            do {
+                try jsonString.write(to: fileURL, atomically: true, encoding: .utf8)
+                print("JSON saved at: \(fileURL.path)")
+                return fileURL
+            } catch {
+                print("Error writing JSON to file: \(error)")
+            }
+        }
+        return nil
+    }
+    
+    func readAndPrintJSON(from fileURL: URL) {
+        do {
+            let jsonString = try String(contentsOf: fileURL, encoding: .utf8)
+            
+            print(jsonString)
+            
+        } catch {
+            print("Error reading JSON file: \(error)")
+        }
+    }
+    
     @IBAction func fetchQuestionsButtonPressed(_ sender: UIButton) {
+        
+        //readTextFile()
+        // Call the function
+        //listDocumentsFolderFiles()
                 
+        /*
         var jsonStrOfQuestAnswer = ""
         
         if let jsonStr = UIPasteboard.general.string {
@@ -665,25 +784,52 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
             print("Received JSON: \(jsonStrOfQuestAnswer)");
             
         }
+        */
         
         
-        
-        let vc = self.storyboard?.instantiateViewController(withIdentifier: "PhysicalQuestionVC") as! PhysicalQuestionVC
-        vc.modalPresentationStyle = .fullScreen
-        
-        vc.questAnswerDict = { dict in
-            self.questAnswerJSON = JSON(dict)
+        if self.arrQuestionsFromServer.count > 0 {
             
-            print("questAnswerJSON is :",self.questAnswerJSON)
+            let vc = self.storyboard?.instantiateViewController(withIdentifier: "PhysicalQuestionVC") as! PhysicalQuestionVC
+            vc.modalPresentationStyle = .fullScreen
             
-            UIDevice.current.isBatteryMonitoringEnabled = true
-            NotificationCenter.default.addObserver(self, selector: #selector(self.batteryStateChanged), name: UIDevice.batteryStateDidChangeNotification, object: nil)
+            vc.arrQuestions = self.arrQuestionsFromServer
             
-            self.checkUSBConnection()
+            vc.questAnswerDict = { dict in
+                
+                self.questAnswerJSON = JSON(dict)
+                print("questAnswerJSON is :",self.questAnswerJSON)
+                                                
+                
+                /*
+                if let jsonData = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    
+                    print("jsonString" , jsonString)
+                    
+                    self.questAnswerJSONPrettyStr = jsonString
+                    
+                }
+                else {
+                    print("Failed to convert JSON data to string")
+                }
+                */
+                
+                
+                UIDevice.current.isBatteryMonitoringEnabled = true
+                NotificationCenter.default.addObserver(self, selector: #selector(self.batteryStateChanged), name: UIDevice.batteryStateDidChangeNotification, object: nil)
+                
+                self.checkUSBConnection()
+                
+            }
+            
+            self.navigationController?.pushViewController(vc, animated: false)
             
         }
-        
-        self.navigationController?.pushViewController(vc, animated: false)
+        else {
+            DispatchQueue.main.async() {
+                self.view.makeToast("Question data not available", duration: 2.0, position: .bottom)
+            }
+        }
         
     }
     
@@ -823,16 +969,14 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
         
         let TestCVCell = collectionView.dequeueReusableCell(withReuseIdentifier: "TestCVCell", for: indexPath) as! TestCVCell
         
-        //TestCVCell.testImgVW.image = UIImage.init(named: arrTestInSDK_Hold[indexPath.item])
-        
         TestCVCell.testImgVW.layer.cornerRadius = 25
         TestCVCell.testImgVW.layer.borderWidth = 1.0
         
         TestCVCell.lblTestName.text = self.getLocalizatioStringValue(key: arrTestInSDK_Hold[indexPath.item].capitalizingFirstLetter())
         
-        let templateImage = UIImage.init(named: arrTestInSDK_Hold[indexPath.item])?.withRenderingMode(.alwaysTemplate)
         
-        //if (arrTestsResultJSONInSDK.count > 0 && arrTestsResultJSONInSDK.count >= arrTestInSDK_Hold.count) {
+        let templateImage = UIImage.init(named: arrTestInSDK_Hold[indexPath.item].lowercased())?.withRenderingMode(.alwaysTemplate)
+        
         
         if (arrTestsResultJSONInSDK.count > indexPath.item) {
             
@@ -897,7 +1041,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
             
             if (arrTestsResultJSONInSDK[indexPath.item] == 0 || arrTestsResultJSONInSDK[indexPath.item] == -1) {
                 
-                if (self.arrTestInSDK_Hold[indexPath.item] == "Battery") {
+                if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Battery".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "BatteryVC") as! BatteryVC
                     vc.isComingFromTestResult = true
@@ -926,7 +1070,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "GSM Network") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "GSM Network".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "GsmVC") as! GsmVC
                     vc.isComingFromTestResult = true
@@ -955,7 +1099,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Storage") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Storage".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "StorageVC") as! StorageVC
                     vc.isComingFromTestResult = true
@@ -984,7 +1128,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "WiFi") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "WiFi".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "WiFiVC") as! WiFiVC
                     vc.isComingFromTestResult = true
@@ -1013,7 +1157,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Bluetooth") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Bluetooth".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "BluetoothVC") as! BluetoothVC
                     vc.isComingFromTestResult = true
@@ -1042,7 +1186,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "GPS") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "GPS".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "GpsVC") as! GpsVC
                     vc.isComingFromTestResult = true
@@ -1071,7 +1215,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "vibrator_auto") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "vibrator_auto".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "VibratorVC") as! VibratorVC
                     vc.isComingFromTestResult = true
@@ -1102,7 +1246,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "vibrator_manual") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "vibrator_manual".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "VibratorVC") as! VibratorVC
                     vc.isComingFromTestResult = true
@@ -1133,7 +1277,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "TopSpeakers_auto") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "top speaker_auto".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "SpeakerVC") as! SpeakerVC
                     vc.isComingFromTestResult = true
@@ -1168,7 +1312,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "TopSpeakers_manual") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "top speaker".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "SpeakerVC") as! SpeakerVC
                     vc.isComingFromTestResult = true
@@ -1203,7 +1347,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "BottomSpeakers_auto") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "bottom speaker_auto".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "SpeakerVC") as! SpeakerVC
                     vc.isComingFromTestResult = true
@@ -1238,7 +1382,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "BottomSpeakers_manual") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "bottom speaker".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "SpeakerVC") as! SpeakerVC
                     vc.isComingFromTestResult = true
@@ -1273,7 +1417,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "TopMicrophone_auto") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "top microphone_auto".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "MicroPhoneVC") as! MicroPhoneVC
                     vc.isComingFromTestResult = true
@@ -1308,7 +1452,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "TopMicrophone_manual") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "top microphone".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "MicroPhoneVC") as! MicroPhoneVC
                     vc.isComingFromTestResult = true
@@ -1343,7 +1487,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "BottomMicrophone_auto") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "bottom microphone_auto".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "MicroPhoneVC") as! MicroPhoneVC
                     vc.isComingFromTestResult = true
@@ -1378,7 +1522,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "BottomMicrophone_manual") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "bottom microphone".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "MicroPhoneVC") as! MicroPhoneVC
                     vc.isComingFromTestResult = true
@@ -1413,7 +1557,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Torch") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Torch".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "FlashLightVC") as! FlashLightVC
                     vc.isComingFromTestResult = true
@@ -1442,7 +1586,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Earphone Jack") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Earphone Jack".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "EarphoneVC") as! EarphoneVC
                     vc.isComingFromTestResult = true
@@ -1471,7 +1615,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Auto Rotation") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Auto Rotation".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "AutoRotationVC") as! AutoRotationVC
                     vc.isComingFromTestResult = true
@@ -1500,7 +1644,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Proximity") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Proximity".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "ProximityVC") as! ProximityVC
                     vc.isComingFromTestResult = true
@@ -1529,7 +1673,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "USB Slot") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "microusb slot".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "ChargerVC") as! ChargerVC
                     vc.isComingFromTestResult = true
@@ -1558,7 +1702,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Dead Pixel") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Dead Pixels".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "DeadPixelsVC") as! DeadPixelsVC
                     vc.isComingFromTestResult = true
@@ -1587,7 +1731,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "frontCamera_auto") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "frontCamera_auto".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "CameraVC") as! CameraVC
                     vc.isComingFromTestResult = true
@@ -1619,7 +1763,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "frontCamera_manual") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "frontCamera_manual".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "CameraVC") as! CameraVC
                     vc.isComingFromTestResult = true
@@ -1651,7 +1795,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "backCamera_auto") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "backCamera_auto".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "CameraVC") as! CameraVC
                     vc.isComingFromTestResult = true
@@ -1683,7 +1827,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "backCamera_manual") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "backCamera_manual".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "CameraVC") as! CameraVC
                     vc.isComingFromTestResult = true
@@ -1715,7 +1859,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Autofocus") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Autofocus".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "CameraVC") as! CameraVC
                     vc.isComingFromTestResult = true
@@ -1744,7 +1888,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Touch Screen") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "Screen".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "ScreenCalibrationVC") as! ScreenCalibrationVC
                     vc.isComingFromTestResult = true
@@ -1773,7 +1917,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "volume up") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "volume up".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "VolumeButtonVC") as! VolumeButtonVC
                     vc.isComingFromTestResult = true
@@ -1807,7 +1951,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "volume down") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "volume down".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "VolumeButtonVC") as! VolumeButtonVC
                     vc.isComingFromTestResult = true
@@ -1841,7 +1985,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "power button") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "power button".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "VolumeButtonVC") as! VolumeButtonVC
                     vc.isComingFromTestResult = true
@@ -1875,7 +2019,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "ringer") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "ringer".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "VolumeButtonVC") as! VolumeButtonVC
                     vc.isComingFromTestResult = true
@@ -1909,7 +2053,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                     vc.modalPresentationStyle = .fullScreen
                     self.present(vc, animated: true, completion: nil)
                 }
-                else if (self.arrTestInSDK_Hold[indexPath.item] == "Finger Print") {
+                else if (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "fingerprint_auto".lowercased()) || (self.arrTestInSDK_Hold[indexPath.item].lowercased() == "fingerprint_manual".lowercased()) {
                     
                     let vc = self.storyboard?.instantiateViewController(withIdentifier: "BiometricVC") as! BiometricVC
                     vc.isComingFromTestResult = true
@@ -1977,6 +2121,181 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
          */
     }
     
+    //MARK: Web Service Methods
+    func getTestProfile() {
+        
+        self.hud.textLabel.text = ""
+        self.hud.backgroundColor = #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 0.4)
+        self.hud.show(in: self.view)
+        
+        var request = URLRequest(url: URL(string: "\(AppBaseUrl)/getTestProfile")!)
+        request.httpMethod = "POST"
+        request.cachePolicy = URLRequest.CachePolicy.reloadIgnoringLocalCacheData
+        
+        let user_id = AppUserDefaults.value(forKey: "userId") as? String ?? ""
+        
+        let postString = "userName=\(AppUserName)&apiKey=\(AppApiKey)&userId=\(user_id)"
+        request.httpBody = postString.data(using: .utf8)
+        
+        print("url in getTestProfile :",request,"\n Param is :", postString)
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            
+            DispatchQueue.main.async() {
+                self.hud.dismiss()
+            }
+            
+            guard let data = data, error == nil else {
+                
+                DispatchQueue.main.async() {
+                    self.view.makeToast(error?.localizedDescription, duration: 3.0, position: .bottom)
+                }
+                
+                return
+            }
+            
+            do {
+                let json = try JSON(data: data)
+                if json["status"] == true {
+                    //print("response json in getTestProfile :","\(json)")
+                    
+                    let strTest = json["profile"].string
+                    
+                    let data = strTest?.data(using: .utf8)
+                    do {
+                        if let jsonArray = try JSONSerialization.jsonObject(with: data ?? Data(), options : .allowFragments) as? [String]
+                        {
+                                                        
+                            //self.arrTestsFromServer = jsonArray
+                            //print("self.arrTestsFromServer", self.arrTestsFromServer)
+                            
+                            for item in jsonArray {
+                                self.arrTestsFromServer.append(item.lowercased())
+                            }
+                            
+                            if let ind = self.arrTestsFromServer.firstIndex(of: ("nfc".lowercased())) {
+                                self.arrTestsFromServer.remove(at: ind)
+                            }
+                            
+                            print("self.arrTestsFromServer", self.arrTestsFromServer)
+                            
+                        } else {
+                            print("bad json")
+                        }
+                    } catch let error as NSError {
+                        print(error)
+                    }
+                    
+                    if self.arrTestsFromServer.count > 0 {
+                        
+                        self.dynamicTestCallingSetup()
+                        
+                        DispatchQueue.main.async {
+                            self.testCollectionView.reloadData()
+                        }
+                        
+                    }
+                    else {
+                        
+                        DispatchQueue.main.async {
+                            self.view.makeToast(self.getLocalizatioStringValue(key: "Tests data not available"), duration: 2.0, position: .bottom)
+                        }
+                        
+                    }
+                    
+                }else{
+                    
+                    DispatchQueue.main.async {
+                        self.view.makeToast(self.getLocalizatioStringValue(key: json["msg"].stringValue), duration: 2.0, position: .bottom)
+                    }
+                    
+                }
+            }catch {
+                DispatchQueue.main.async() {
+                    self.view.makeToast(self.getLocalizatioStringValue(key: "Something went wrong!!"), duration: 3.0, position: .bottom)
+                }
+            }
+            
+        }
+        task.resume()
+    }
+    
+    func getPhysicalQuestions() {
+        
+        self.hud.textLabel.text = ""
+        self.hud.backgroundColor = #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 0.4)
+        self.hud.show(in: self.view)
+        
+        var request = URLRequest(url: URL(string: "\(AppBaseUrl)/getPhysicalQuestion")!)
+        request.httpMethod = "POST"
+        request.cachePolicy = URLRequest.CachePolicy.reloadIgnoringLocalCacheData
+        
+        let user_id = AppUserDefaults.value(forKey: "userId") as? String ?? ""
+        
+        let postString = "userName=\(AppUserName)&apiKey=\(AppApiKey)&userId=\(user_id)"
+        request.httpBody = postString.data(using: .utf8)
+        
+        print("url in getPhysicalQuestion :",request,"\n Param is :", postString)
+        
+        let task = URLSession.shared.dataTask(with: request) { jsonData, response, error in
+            
+            DispatchQueue.main.async() {
+                self.hud.dismiss()
+            }
+            
+            guard let data = jsonData, error == nil else {
+                
+                DispatchQueue.main.async() {
+                    self.view.makeToast(error?.localizedDescription, duration: 3.0, position: .bottom)
+                }
+                
+                return
+            }
+                        
+            do {
+                let json = try JSON(data: data)
+                if json["status"] == true {
+                    //print("response json in getPhysicalQuestion :","\(json)")
+                                        
+                    //let arrQuestions = json["question"].array
+                    //print("arrQuestions", arrQuestions ?? [])
+                    
+                    let decoder = JSONDecoder()
+
+                    do {
+                        let phyQuest = try decoder.decode(PhysicalQuestionModal.self, from: data)
+                        //print("phyQuest",phyQuest)
+                                                
+                        self.arrQuestionsFromServer = phyQuest.question?.questArray ?? [[:]]
+                        
+                    } catch {
+                        print("error.localizedDescription",error.localizedDescription)
+                    }
+                    
+                }else{
+                    
+                    DispatchQueue.main.async {
+                        self.view.makeToast(self.getLocalizatioStringValue(key: json["msg"].stringValue), duration: 2.0, position: .bottom)
+                    }
+                    
+                }
+            }catch {
+                DispatchQueue.main.async() {
+                    self.view.makeToast(self.getLocalizatioStringValue(key: "Something went wrong!!"), duration: 3.0, position: .bottom)
+                }
+            }
+            
+        }
+        task.resume()
+    }
+    
+}
+
+extension Encodable {
+  var questArray: [[String: Any]]? {
+    guard let data = try? JSONEncoder().encode(self) else { return nil }
+    return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)).flatMap { $0 as? [[String: Any]] }
+  }
 }
 
 //MARK: All Tests Calling Dynamically in App
@@ -2003,11 +2322,11 @@ extension HomeVC {
                     
                     currentTestIndex += 1
                     
-                    switch self.currentTestName {
+                    switch self.currentTestName.lowercased() {
                         
-                    case "Bluetooth":
+                    case "Bluetooth".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Bluetooth")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Bluetooth".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             self.bluetoothLoad()
@@ -2016,9 +2335,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "WiFi":
+                    case "WiFi".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("WiFi")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("WiFi".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             self.wifiLoad()
@@ -2027,9 +2346,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Battery":
+                    case "Battery".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Battery")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Battery".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             self.batteryLoad()
@@ -2038,9 +2357,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Storage":
+                    case "Storage".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Storage")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Storage".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             self.storageLoad()
@@ -2049,9 +2368,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "GPS":
+                    case "GPS".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("GPS")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("GPS".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             self.gpsLoad()
@@ -2060,9 +2379,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "GSM Network":
+                    case "GSM Network".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("GSM Network")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("GSM Network".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             self.gsmLoad()
@@ -2070,9 +2389,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "vibrator_auto":
+                    case "vibrator_auto".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("vibrator_auto")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("vibrator_auto".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             self.vibratorLoad()
@@ -2081,9 +2400,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "TopSpeakers_auto":
+                    case "top speaker_auto".lowercased():
                         
-                        //if let ind = arrTestsInSDK.firstIndex(of: ("TopSpeakers_auto")) {
+                        //if let ind = arrTestsInSDK.firstIndex(of: ("top speaker_auto")) {
                             //arrTestsInSDK.remove(at: ind)
                             
                         self.playSoundFromTopSpeaker()
@@ -2092,9 +2411,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "BottomSpeakers_auto":
+                    case "bottom speaker_auto".lowercased():
                         
-                        //if let ind = arrTestsInSDK.firstIndex(of: ("BottomSpeakers_auto")) {
+                        //if let ind = arrTestsInSDK.firstIndex(of: ("bottom speaker_auto")) {
                             //arrTestsInSDK.remove(at: ind)
                             
                         self.playSoundFromBottomSpeaker()
@@ -2103,9 +2422,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "TopMicrophone_auto":
+                    case "top microphone_auto".lowercased():
                         
-                        //if let ind = arrTestsInSDK.firstIndex(of: ("TopMicrophone_auto")) {
+                        //if let ind = arrTestsInSDK.firstIndex(of: ("top microphone_auto")) {
                             //arrTestsInSDK.remove(at: ind)
                             
                         self.playSoundFromTopSpeaker()
@@ -2114,9 +2433,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "BottomMicrophone_auto":
+                    case "bottom microphone_auto".lowercased():
                         
-                        //if let ind = arrTestsInSDK.firstIndex(of: ("BottomMicrophone_auto")) {
+                        //if let ind = arrTestsInSDK.firstIndex(of: ("bottom microphone_auto")) {
                             //arrTestsInSDK.remove(at: ind)
                             
                         self.playSoundFromBottomSpeaker()
@@ -2125,9 +2444,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "vibrator_manual":
+                    case "vibrator_manual".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("vibrator_manual")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("vibrator_manual".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "VibratorVC") as! VibratorVC
@@ -2255,9 +2574,9 @@ extension HomeVC {
                          */
                                            
                         
-                    case "TopSpeakers_manual":
+                    case "top speaker".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("TopSpeakers_manual")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("top speaker".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "SpeakerVC") as! SpeakerVC
@@ -2278,9 +2597,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "BottomSpeakers_manual":
+                    case "bottom speaker".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("BottomSpeakers_manual")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("bottom speaker".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "SpeakerVC") as! SpeakerVC
@@ -2301,9 +2620,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "TopMicrophone_manual":
+                    case "top microphone".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("TopMicrophone_manual")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("top microphone".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "MicroPhoneVC") as! MicroPhoneVC
@@ -2324,9 +2643,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "BottomMicrophone_manual":
+                    case "bottom microphone".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("BottomMicrophone_manual")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("bottom microphone".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "MicroPhoneVC") as! MicroPhoneVC
@@ -2347,9 +2666,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Torch":
+                    case "Torch".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Torch")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Torch".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "FlashLightVC") as! FlashLightVC
@@ -2363,9 +2682,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Earphone Jack":
+                    case "Earphone Jack".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Earphone Jack")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Earphone Jack".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "EarphoneVC") as! EarphoneVC
@@ -2379,9 +2698,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Auto Rotation":
+                    case "Auto Rotation".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Auto Rotation")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Auto Rotation".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "AutoRotationVC") as! AutoRotationVC
@@ -2395,9 +2714,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Proximity":
+                    case "Proximity".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Proximity")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Proximity".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "ProximityVC") as! ProximityVC
@@ -2411,9 +2730,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "USB Slot":
+                    case "microusb slot".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("USB Slot")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("microusb slot".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "ChargerVC") as! ChargerVC
@@ -2427,9 +2746,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Dead Pixel":
+                    case "Dead Pixels".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Dead Pixel")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Dead Pixels".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "DeadPixelsVC") as! DeadPixelsVC
@@ -2443,7 +2762,7 @@ extension HomeVC {
                         
                         break
                         
-                    case "frontCamera_auto", "frontCamera_manual", "backCamera_auto", "backCamera_manual" :
+                    case "frontCamera_auto".lowercased(), "frontCamera_manual".lowercased(), "backCamera_auto".lowercased(), "backCamera_manual".lowercased() :
                         
                         //if let ind = arrTestsInSDK.firstIndex(of: ("frontCamera_auto")) {
                             //arrTestsInSDK.remove(at: ind)
@@ -2463,9 +2782,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Autofocus":
+                    case "Autofocus".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Autofocus")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Autofocus".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             //if let ind1 = arrTestsInSDK.firstIndex(of: ("Camera")) {
@@ -2483,9 +2802,9 @@ extension HomeVC {
                         
                         break
                         
-                    case "Touch Screen":
+                    case "Screen".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Touch Screen")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("Screen".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "ScreenCalibrationVC") as! ScreenCalibrationVC
@@ -2499,7 +2818,7 @@ extension HomeVC {
                         
                         break
                         
-                    case "volume up", "volume down", "power button", "ringer" :
+                    case "volume up".lowercased(), "volume down".lowercased(), "power button".lowercased(), "ringer".lowercased() :
                         
                         //if let ind = arrTestsInSDK.firstIndex(of: ("volume up")) {
                             //arrTestsInSDK.remove(at: ind)
@@ -2515,9 +2834,25 @@ extension HomeVC {
                         
                         break
                         
-                    case "Finger Print":
+                    case "fingerprint_auto".lowercased():
                         
-                        if let ind = arrTestsInSDK.firstIndex(of: ("Finger Print")) {
+                        if let ind = arrTestsInSDK.firstIndex(of: ("fingerprint_auto".lowercased())) {
+                            arrTestsInSDK.remove(at: ind)
+                            
+                            let vc = self.storyboard?.instantiateViewController(withIdentifier: "BiometricVC") as! BiometricVC
+                            let navigationController = UINavigationController(rootViewController: vc)
+                            navigationController.modalPresentationStyle = .overFullScreen
+                            vc.resultJSON = testResultJSON
+                            vc.modalPresentationStyle = .overFullScreen
+                            self.present(navigationController, animated: true, completion: nil)
+                            
+                        }
+                        
+                        break
+                        
+                    case "fingerprint_manual".lowercased():
+                        
+                        if let ind = arrTestsInSDK.firstIndex(of: ("fingerprint_manual".lowercased())) {
                             arrTestsInSDK.remove(at: ind)
                             
                             let vc = self.storyboard?.instantiateViewController(withIdentifier: "BiometricVC") as! BiometricVC
@@ -2565,6 +2900,8 @@ extension HomeVC {
                     //NotificationCenter.default.addObserver(self, selector: #selector(self.batteryStateChanged), name: UIDevice.batteryStateDidChangeNotification, object: nil)
                                     
                     self.fetchQuestionBtn.isHidden = false
+                    
+                    self.getPhysicalQuestions()
                     
                     
                     /*
@@ -2698,8 +3035,48 @@ extension HomeVC {
             }
             
             
-            NSLog("%@%@%@%@%@%@%@%@%@%@%@", "39220iOS@physicalMemory: ", "\(self.phyMemoryJSON)", "\n" , "39220iOS@LOCKS: ", "\(self.oemJailMdmJSON)", "\n",  "39220iOS@warehouse: ", "\(self.resultJSON)", "\n", "39220iOS@physicalQuestions", "\(self.questAnswerJSON)")
+            //NSLog("%@%@%@%@%@%@%@%@%@%@%@", "39220iOS@physicalMemory: ", "\(self.phyMemoryJSON)", "\n" , "39220iOS@LOCKS: ", "\(self.oemJailMdmJSON)", "\n",  "39220iOS@warehouse: ", "\(self.resultJSON)", "\n", "39220iOS@physicalQuestions", "\(self.questAnswerJSONPrettyStr)")
             
+            NSLog("%@%@%@%@%@%@%@%@", "39220iOS@physicalMemory: ", "\(self.phyMemoryJSON)", "\n" , "39220iOS@LOCKS: ", "\(self.oemJailMdmJSON)", "\n",  "39220iOS@warehouse: ", "\(self.resultJSON)")
+            
+            
+            
+            
+            //NSLog("%@%@", "39220iOS@physicalQuestions", "\(self.questAnswerJSONPrettyStr)")
+            
+            
+            // Convert dictionary to array of tuples
+            let dictArray = Array(self.questAnswerJSON)
+            //let dictArray = self.questAnswerJSON
+
+            // Chunk size
+            let chunkSize = 10
+            
+            // Loop through chunks
+            for chunkStart in stride(from: 0, to: dictArray.count, by: chunkSize) {
+                let chunk = dictArray[chunkStart..<min(chunkStart + chunkSize, dictArray.count)]
+                
+                //print("Chunk starting at index \(chunkStart):")
+                
+                var arrPhyQuest = [String]()
+                
+                for (key, value) in chunk {
+                    
+                    //NSLog("%@%@", "39220iOS@physicalQuestions", "\(key): \(value)")
+                    
+                    let keyVal = "\(key)"
+                    let itemVal = "\(value)"
+                    
+                    arrPhyQuest.append(keyVal + " : " + itemVal)
+                                        
+                    //NSLog("%@%@%@%@", "39220iOS@physicalQuestions", "\(keyVal)", " : ", "\(itemVal)")
+                }
+                
+                NSLog("%@%@", "39220iOS@physicalQuestions", arrPhyQuest)
+                
+            }
+            
+                        
         }
         
     }
@@ -3508,6 +3885,8 @@ extension HomeVC {
     
     func batteryTest() {
         
+        //print("Luminous.Battery.level", Luminous.Battery.level ?? 0.0)
+        //if ((Luminous.Battery.level ?? 0.0) < 80.0) {
         if Luminous.Battery.state == .unknown {
             
             if (AppUserDefaults.value(forKey: "AppResultJSON_Data") != nil) {
@@ -4429,23 +4808,23 @@ extension HomeVC {
     
     func failMarkTopSpeakerAndMicTest() {
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("TopSpeakers_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("top speaker_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(0)
             
-            self.resultJSON["TopSpeakers_auto"].int = 0
-            UserDefaults.standard.set(false, forKey: "TopSpeakers_auto")
+            self.resultJSON["top speaker_auto"].int = 0
+            UserDefaults.standard.set(false, forKey: "top speaker_auto")
         }
         
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("TopMicrophone_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("top microphone_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(0)
             
-            self.resultJSON["TopMicrophone_auto"].int = 0
-            UserDefaults.standard.set(false, forKey: "TopMicrophone_auto")
+            self.resultJSON["top microphone_auto"].int = 0
+            UserDefaults.standard.set(false, forKey: "top microphone_auto")
         }
         
         self.audioSession = nil
@@ -4459,23 +4838,23 @@ extension HomeVC {
     
     func passMarkTopSpeakerAndMicTest() {
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("TopSpeakers_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("top speaker_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(1)
             
-            self.resultJSON["TopSpeakers_auto"].int = 1
-            UserDefaults.standard.set(true, forKey: "TopSpeakers_auto")
+            self.resultJSON["top speaker_auto"].int = 1
+            UserDefaults.standard.set(true, forKey: "top speaker_auto")
         }
         
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("TopMicrophone_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("top microphone_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(1)
             
-            self.resultJSON["TopMicrophone_auto"].int = 1
-            UserDefaults.standard.set(true, forKey: "TopMicrophone_auto")
+            self.resultJSON["top microphone_auto"].int = 1
+            UserDefaults.standard.set(true, forKey: "top microphone_auto")
         }
         
         self.audioSession = nil
@@ -4489,23 +4868,23 @@ extension HomeVC {
     
     func failMarkBottomSpeakerAndMicTest() {
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("BottomSpeakers_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("bottom speaker_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(0)
             
-            self.resultJSON["BottomSpeakers_auto"].int = 0
-            UserDefaults.standard.set(false, forKey: "BottomSpeakers_auto")
+            self.resultJSON["bottom speaker_auto"].int = 0
+            UserDefaults.standard.set(false, forKey: "bottom speaker_auto")
         }
         
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("BottomMicrophone_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("bottom microphone_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(0)
             
-            self.resultJSON["BottomMicrophone_auto"].int = 0
-            UserDefaults.standard.set(false, forKey: "BottomMicrophone_auto")
+            self.resultJSON["bottom microphone_auto"].int = 0
+            UserDefaults.standard.set(false, forKey: "bottom microphone_auto")
         }
         
         self.audioSession = nil
@@ -4519,23 +4898,23 @@ extension HomeVC {
     
     func passMarkBottomSpeakerAndMicTest() {
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("BottomSpeakers_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("bottom speaker_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(1)
             
-            self.resultJSON["BottomSpeakers_auto"].int = 1
-            UserDefaults.standard.set(true, forKey: "BottomSpeakers_auto")
+            self.resultJSON["bottom speaker_auto"].int = 1
+            UserDefaults.standard.set(true, forKey: "bottom speaker_auto")
         }
         
         
-        if let ind = arrTestsInSDK.firstIndex(of: ("BottomMicrophone_auto")) {
+        if let ind = arrTestsInSDK.firstIndex(of: ("bottom microphone_auto")) {
             arrTestsInSDK.remove(at: ind)
             
             arrTestsResultJSONInSDK.append(1)
             
-            self.resultJSON["BottomMicrophone_auto"].int = 1
-            UserDefaults.standard.set(true, forKey: "BottomMicrophone_auto")
+            self.resultJSON["bottom microphone_auto"].int = 1
+            UserDefaults.standard.set(true, forKey: "bottom microphone_auto")
         }
         
         self.audioSession = nil

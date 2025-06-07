@@ -1,5 +1,5 @@
 {
-  "originHash" : "a6be480ef8aa44556f48dd2765848514b600bb5eeb5f26250ec7f4ea945a7822",
+  "originHash" : "7154716c73b4b12e32d557596f3e060451e473d4b558b8c05df6a95653ab0c2b",
   "pins" : [
     {
       "identity" : "permissionskit",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "5e5935998cf9c44033e429c3b7d1dd176a1f55ad",
         "version" : "11.1.0"
+      }
+    },
+    {
+      "identity" : "qrcodereader.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/yannickl/QRCodeReader.swift.git",
+      "state" : {
+        "revision" : "5020b5a47199d8ba80c83a4b4fafd70e9dc9dc7f",
+        "version" : "10.1.1"
       }
     }
   ],

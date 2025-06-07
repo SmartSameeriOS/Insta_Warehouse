@@ -164,7 +164,9 @@ extension UIViewController {
             if key != "imei_number" {
                 if key != "SelectedLanguageSymbol" {
                     if key != "AppBaseUrl" {
-                        defaults.removeObject(forKey: key)
+                        if key != "userId" {
+                            defaults.removeObject(forKey: key)
+                        }
                     }
                 }
                 
@@ -186,7 +188,7 @@ extension UIViewController {
         let testName = arrTests[index]
         
         switch testName {
-        case "Touch Screen":
+        case "Screen":
             return ("ScreenCalibrationVC", ScreenCalibrationVC())
         case "deadpixel":
             return ("DeadPixelsVC", DeadPixelsVC())
