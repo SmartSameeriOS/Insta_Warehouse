@@ -491,6 +491,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
             ]
             */
                     
+            arrTestsInSDK = []
             arrTestsInSDK = self.arrTestsFromServer
             
 //            arrTestsInSDK = [
@@ -2177,7 +2178,7 @@ class HomeVC: UIViewController, UICollectionViewDataSource, UICollectionViewDele
                                 self.arrTestsFromServer.remove(at: ind)
                             }
                             
-                            print("self.arrTestsFromServer", self.arrTestsFromServer)
+                            //print("self.arrTestsFromServer", self.arrTestsFromServer)
                             
                         } else {
                             print("bad json")
